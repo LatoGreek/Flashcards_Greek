@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lato Greek Amsterdam - Flashcards</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Lato -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Lato', sans-serif;
+    }
+    .perspective {
+      perspective: 1000px;
+    }
+    .preserve-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between text-slate-800">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-teal-600 to-indigo-700 text-white shadow-lg py-6 px-4">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-wide text-center md:text-left">Lato Greek Amsterdam</h1>
+        <p class="text-teal-100 text-sm mt-1 text-center md:text-left">Διαδραστικές Κάρτες Εκμάθησης (Flashcards)</p>
+      </div>
+      <div class="flex gap-2 text-xs md:text-sm">
+        <span class="bg-teal-500/30 border border-teal-300/30 px-3 py-1.5 rounded-full flex items-center gap-2">
+          <i class="fa-solid fa-layer-group"></i> 3 Κατηγορίες
+        </span>
+        <span class="bg-indigo-500/30 border border-indigo-300/30 px-3 py-1.5 rounded-full flex items-center gap-2">
+          <i class="fa-solid fa-clone"></i> 31 Κάρτες
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl w-full mx-auto p-4 flex-grow flex flex-col justify-center gap-6">
+    
+    <!-- Controls & Filters -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-wrap justify-between items-center gap-4">
+      <!-- Filter Categories -->
+      <div class="flex flex-wrap gap-2" id="filter-buttons">
+        <button onclick="filterCards('all')" id="btn-all" class="px-4 py-2 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm shadow-indigo-100">
+          Όλα
+        </button>
+        <button onclick="filterCards('greetings')" id="btn-greetings" class="px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block mr-1.5"></span>Χαιρετισμοί
+        </button>
+        <button onclick="filterCards('pronouns')" id="btn-pronouns" class="px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+          <span class="w-2.5 h-2.5 rounded-full bg-fuchsia-400 inline-block mr-1.5"></span>Αντωνυμίες
+        </button>
+        <button onclick="filterCards('to-be')" id="btn-to-be" class="px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block mr-1.5"></span>Το Ρήμα "Είμαι"
+        </button>
+        <button onclick="toggleFavoritesFilter()" id="btn-favs" class="px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-1.5">
+          <i class="fa-solid fa-star text-amber-400"></i> Αγαπημένα (<span id="fav-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Extra settings -->
+      <div class="flex items-center gap-3">
+        <!-- Shuffle -->
+        <button onclick="shuffleCards()" title="Ανακάτεμα Καρτών" class="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-slate-600">
+          <i class="fa-solid fa-shuffle"></i>
+        </button>
+        <!-- Reset -->
+        <button onclick="resetApp()" title="Επαναφορά" class="p-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-500 rounded-xl transition text-slate-500">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Filter Warning if Empty -->
+    <div id="empty-state" class="hidden text-center py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
+      <i class="fa-regular fa-star text-slate-300 text-5xl mb-3 block"></i>
+      <h3 class="text-lg font-bold text-slate-700">Δεν βρέθηκαν κάρτες</h3>
+      <p class="text-slate-400 text-sm mt-1">Δοκιμάστε να επιλέξετε άλλη κατηγορία ή προσθέστε Αγαπημένα!</p>
+    </div>
+
+    <!-- Card and Playback Area -->
+    <div id="flashcard-container" class="relative">
+      
+      <!-- Auto Play Progress Bar -->
+      <div class="w-full bg-slate-200 h-1.5 rounded-full mb-4 overflow-hidden hidden" id="autoplay-progress-container">
+        <div id="autoplay-progress" class="bg-indigo-600 h-full w-0 transition-all duration-100 ease-linear"></div>
+      </div>
+
+      <!-- Flashcard (Flip Container) -->
+      <div class="perspective w-full h-80 md:h-96 cursor-pointer group" onclick="flipCard()">
+        <div id="flip-surface" class="preserve-3d relative w-full h-full duration-500">
+          
+          <!-- FRONT SIDE (Greek) -->
+          <div id="card-front" class="absolute inset-0 backface-hidden rounded-3xl border-2 shadow-md flex flex-col justify-between p-6 transition-colors duration-300">
+            <!-- Header bar inside card -->
+            <div class="flex justify-between items-center">
+              <span id="card-badge-front" class="text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider"></span>
+              <div class="flex gap-2">
+                <button onclick="speakText(event, 'front')" title="Ακρόαση Προφοράς" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white shadow-sm border border-slate-200/50 text-slate-600 hover:text-indigo-600 transition">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button onclick="toggleFavorite(event)" id="fav-btn-front" title="Προσθήκη στα Αγαπημένα" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white shadow-sm border border-slate-200/50 transition">
+                  <i class="fa-solid fa-star text-slate-300 hover:text-amber-400"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="text-center px-4 my-auto">
+              <h2 id="text-front" class="text-3xl md:text-5xl font-extrabold text-slate-800 tracking-tight leading-snug"></h2>
+              <p class="text-xs text-indigo-400 uppercase tracking-widest mt-4 font-bold">Ελληνικά</p>
+            </div>
+
+            <!-- Footer hint & Brand Footer -->
+            <div class="mt-auto border-t border-slate-200/50 pt-3 flex flex-col gap-2">
+              <div class="flex justify-between items-center text-slate-400 text-[11px] sm:text-xs">
+                <span id="hint-toggle" onclick="toggleHint(event)" class="font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer">
+                  <i class="fa-regular fa-lightbulb"></i> <span id="hint-text-label">Εμφάνιση Βοήθειας</span>
+                </span>
+                <span>Κάντε κλικ για περιστροφή <i class="fa-solid fa-rotate"></i></span>
+              </div>
+              <div class="text-center text-[10px] sm:text-xs font-bold tracking-[0.25em] text-slate-400/90 uppercase italic">
+                Lato Greek Amsterdam
+              </div>
+            </div>
+            
+            <!-- Hidden Hint overlay -->
+            <div id="hint-overlay" class="absolute bottom-24 left-6 right-6 bg-slate-900/90 text-white p-3.5 rounded-2xl text-xs font-medium shadow-lg transform translate-y-4 opacity-0 pointer-events-none transition-all duration-300">
+              <span class="block font-bold text-amber-300 mb-0.5"><i class="fa-solid fa-lightbulb"></i> Βοήθεια:</span>
+              <span id="hint-content"></span>
+            </div>
+          </div>
+
+          <!-- BACK SIDE (English) -->
+          <div id="card-back" class="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl border-2 shadow-md flex flex-col justify-between p-6 transition-colors duration-300">
+            <!-- Header bar inside card -->
+            <div class="flex justify-between items-center">
+              <span id="card-badge-back" class="text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider"></span>
+              <div class="flex gap-2">
+                <button onclick="speakText(event, 'back')" title="Ακρόαση Προφοράς" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white shadow-sm border border-slate-200/50 text-slate-600 hover:text-indigo-600 transition">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button onclick="toggleFavorite(event)" id="fav-btn-back" title="Προσθήκη στα Αγαπημένα" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-white shadow-sm border border-slate-200/50 transition">
+                  <i class="fa-solid fa-star text-slate-300 hover:text-amber-400"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="text-center px-4 my-auto">
+              <h2 id="text-back" class="text-2xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-normal"></h2>
+              <p class="text-xs text-indigo-400 uppercase tracking-widest mt-4 font-bold">English</p>
+            </div>
+
+            <!-- Footer indicator & Brand Footer -->
+            <div class="mt-auto border-t border-slate-200/50 pt-3 flex flex-col gap-2">
+              <div class="flex justify-end text-slate-400 text-[11px] sm:text-xs">
+                <span>Κάντε κλικ για επαναφορά <i class="fa-solid fa-rotate"></i></span>
+              </div>
+              <div class="text-center text-[10px] sm:text-xs font-bold tracking-[0.25em] text-slate-400/90 uppercase italic">
+                Lato Greek Amsterdam
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Navigation & Playback Controls -->
+      <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        
+        <!-- Auto-rotate setup -->
+        <div class="flex items-center gap-2 bg-white border border-slate-100 shadow-sm px-4 py-2 rounded-2xl w-full sm:w-auto justify-center">
+          <button id="btn-autoplay" onclick="toggleAutoplay()" class="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-indigo-600 transition">
+            <i class="fa-solid fa-play text-indigo-600" id="play-icon"></i> <span id="play-text">Αυτόματη Περιστροφή</span>
+          </button>
+          <span class="text-slate-300">|</span>
+          <select id="autoplay-speed" onchange="updateAutoplaySpeed()" class="text-xs font-bold text-slate-500 bg-transparent border-none focus:outline-none cursor-pointer">
+            <option value="3000">3 δευτ.</option>
+            <option value="5000" selected>5 δευτ.</option>
+            <option value="8000">8 δευτ.</option>
+          </select>
+        </div>
+
+        <!-- Previous / Next controls -->
+        <div class="flex items-center gap-4">
+          <button onclick="prevCard()" class="w-12 h-12 rounded-full bg-white hover:bg-indigo-50 border border-slate-100 shadow-sm flex items-center justify-center text-slate-600 hover:text-indigo-600 transition active:scale-95">
+            <i class="fa-solid fa-chevron-left text-lg"></i>
+          </button>
+          <span class="text-sm font-bold text-slate-500 min-w-[70px] text-center" id="card-counter">
+            0 / 0
+          </span>
+          <button onclick="nextCard()" class="w-12 h-12 rounded-full bg-white hover:bg-indigo-50 border border-slate-100 shadow-sm flex items-center justify-center text-slate-600 hover:text-indigo-600 transition active:scale-95">
+            <i class="fa-solid fa-chevron-right text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Sound Info/Toggle -->
+        <div class="text-slate-400 text-xs text-center sm:text-right">
+          <i class="fa-solid fa-keyboard mr-1"></i> Χρησιμοποιήστε το <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px] font-mono">Space</kbd> για γύρισμα, <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px] font-mono">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-[10px] font-mono">→</kbd> για αλλαγή.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick Reference Table / Accordion -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 mt-4">
+      <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-list-ul text-teal-600"></i> Πίνακας Αναφοράς
+      </h3>
+      <div class="overflow-x-auto max-h-60 overflow-y-auto border border-slate-100 rounded-xl">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50 text-slate-500 sticky top-0 uppercase text-[10px] tracking-wider font-bold">
+            <tr>
+              <th class="px-4 py-3">Ελληνικά</th>
+              <th class="px-4 py-3">English</th>
+              <th class="px-4 py-3">Κατηγορία</th>
+            </tr>
+          </thead>
+          <tbody id="reference-table-body" class="divide-y divide-slate-100">
+            <!-- Populated via Javascript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 text-center py-6 px-4 text-xs mt-12 border-t border-slate-800">
+    <p>© 2026 Lato Greek Amsterdam. Φτιαγμένο με αγάπη για εύκολη και γρήγορη εκμάθηση.</p>
+  </footer>
+
+  <!-- Script Logic -->
+  <script>
+    // Full dataset matching the exact request
+    const dataset = [
+      { id: 1, front: "Γεια σου.", back: "Hi. (informal)", cat: "greetings", catLabel: "Χαιρετισμός", hint: "Φιλικός χαιρετισμός σε ένα άτομο." },
+      { id: 2, front: "Γεια σας.", back: "Hello. / Hi. (formal or plural)", cat: "greetings", catLabel: "Χαιρετισμός", hint: "Ευγενικός ή πληθυντικός χαιρετισμός." },
+      { id: 3, front: "Από δω ο Κώστας.", back: "This is Kostas.", cat: "greetings", catLabel: "Σύσταση", hint: "Παρουσίαση ανδρικού ονόματος (ο Κώστας)." },
+      { id: 4, front: "Από δω η Ελένη.", back: "This is Eleni.", cat: "greetings", catLabel: "Σύσταση", hint: "Παρουσίαση γυναικείου ονόματος (η Ελένη)." },
+      { id: 5, front: "Έλα!", back: "Come!", cat: "greetings", catLabel: "Χαιρετισμός", hint: "Προστακτική του ρήματος 'έρχομαι' (πολύ συχνό)." },
+      { id: 6, front: "Εδώ είμαι.", back: "Here I am.", cat: "greetings", catLabel: "Έκφραση", hint: "Δηλώνει παρουσία στο χώρο." },
+      { id: 7, front: "Δεν είμαι.", back: "I am not.", cat: "greetings", catLabel: "Έκφραση", hint: "Άρνηση του ρήματος 'είμαι'." },
+      { id: 8, front: "Πώς σε λένε;", back: "What's your name?", cat: "greetings", catLabel: "Σύσταση", hint: "Ερώτηση για το όνομα κάποιου." },
+      { id: 9, front: "Με λένε...", back: "My name is...", cat: "greetings", catLabel: "Σύσταση", hint: "Απάντηση για το δικό μας όνομα." },
+      { id: 10, front: "Είμαι από...", back: "I am from...", cat: "greetings", catLabel: "Σύσταση", hint: "Δήλωση καταγωγής/προέλευσης." },
+      { id: 11, front: "η τάξη", back: "the classroom / the class", cat: "greetings", catLabel: "Σχολείο", hint: "Ο χώρος όπου γίνεται το μάθημα." },
+
+      { id: 12, front: "εγώ", back: "I", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Α' Πρόσωπο Ενικού." },
+      { id: 13, front: "εσύ", back: "you (singular)", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Β' Πρόσωπο Ενικού." },
+      { id: 14, front: "αυτός", back: "he", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Γ' Πρόσωπο Ενικού (Αρσενικό)." },
+      { id: 15, front: "αυτή", back: "she", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Γ' Πρόσωπο Ενικού (Θηλυκό)." },
+      { id: 16, front: "αυτό", back: "it", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Γ' Πρόσωπο Ενικού (Ουδέτερο)." },
+      { id: 17, front: "εμείς", back: "we", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Α' Πρόσωπο Πληθυντικού." },
+      { id: 18, front: "εσείς", back: "you (plural/formal)", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Β' Πρόσωπο Πληθυντικού ή Ευγενείας." },
+      { id: 19, front: "αυτοί", back: "they (masculine)", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Γ' Πρόσωπο Πληθυντικού (Αρσενικό)." },
+      { id: 20, front: "αυτές", back: "they (feminine)", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Γ' Πρόσωπο Πληθυντικού (Θηλυκό)." },
+      { id: 21, front: "αυτά", back: "they (neuter)", cat: "pronouns", catLabel: "Αντωνυμία", hint: "Γ' Πρόσωπο Πληθυντικού (Ουδέτερο)." },
+
+      { id: 22, front: "εγώ είμαι", back: "I am", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Α' Πρόσωπο Ενικού." },
+      { id: 23, front: "εσύ είσαι", back: "you are", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Β' Πρόσωπο Ενικού." },
+      { id: 24, front: "αυτός είναι", back: "he is", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Γ' Πρόσωπο Ενικού (Αρσενικό)." },
+      { id: 25, front: "αυτή είναι", back: "she is", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Γ' Πρόσωπο Ενικού (Θηλυκό)." },
+      { id: 26, front: "αυτό είναι", back: "it is", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Γ' Πρόσωπο Ενικού (Ουδέτερο)." },
+      { id: 27, front: "εμείς είμαστε", back: "we are", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Α' Πρόσωπο Πληθυντικού." },
+      { id: 28, front: "εσείς είστε (ή είσαστε)", back: "you are (plural/formal)", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Β' Πρόσωπο Πληθυντικού." },
+      { id: 29, front: "αυτοί είναι", back: "they are (masculine)", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Γ' Πρόσωπο Πληθυντικού (Αρσενικό)." },
+      { id: 30, front: "αυτές είναι", back: "they are (feminine)", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Γ' Πρόσωπο Πληθυντικού (Θηλυκό)." },
+      { id: 31, front: "αυτά είναι", back: "they are (neuter)", cat: "to-be", catLabel: "Ρήμα Είμαι", hint: "Ρήμα είμαι - Γ' Πρόσωπο Πληθυντικού (Ουδέτερο)." }
+    ];
+
+    // Colors configs for visual distinction
+    const catColors = {
+      greetings: {
+        bg: "bg-cyan-50/90",
+        border: "border-cyan-200",
+        badge: "bg-cyan-200 text-cyan-800",
+        starFilled: "text-amber-400"
+      },
+      pronouns: {
+        bg: "bg-fuchsia-50/90",
+        border: "border-fuchsia-200",
+        badge: "bg-fuchsia-200 text-fuchsia-800",
+        starFilled: "text-amber-400"
+      },
+      "to-be": {
+        bg: "bg-emerald-50/90",
+        border: "border-emerald-200",
+        badge: "bg-emerald-200 text-emerald-800",
+        starFilled: "text-amber-400"
+      }
+    };
+
+    // App state
+    let cards = [...dataset];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let favorites = JSON.parse(localStorage.getItem('lato_favs')) || [];
+    let activeFilter = 'all';
+    let favoritesOnly = false;
+    
+    // Autoplay configuration
+    let autoplayInterval = null;
+    let autoplayTimer = null;
+    let isPlaying = false;
+    let autoplaySpeed = 5000; // default 5s
+    let autoplayProgress = 0;
+    const progressUpdateInterval = 100; // updates progress bar every 100ms
+
+    // Elements
+    const flipSurface = document.getElementById('flip-surface');
+    const cardFront = document.getElementById('card-front');
+    const cardBack = document.getElementById('card-back');
+    const textFront = document.getElementById('text-front');
+    const textBack = document.getElementById('text-back');
+    const cardBadgeFront = document.getElementById('card-badge-front');
+    const cardBadgeBack = document.getElementById('card-badge-back');
+    const hintContent = document.getElementById('hint-content');
+    const hintOverlay = document.getElementById('hint-overlay');
+    const hintTextLabel = document.getElementById('hint-text-label');
+    const cardCounter = document.getElementById('card-counter');
+    const favCountEl = document.getElementById('fav-count');
+    const emptyState = document.getElementById('empty-state');
+    const flashcardContainer = document.getElementById('flashcard-container');
+    const tableBody = document.getElementById('reference-table-body');
+
+    // SpeechSynthesis setup
+    const speech = window.speechSynthesis;
+
+    // Initialize
+    function init() {
+      renderTable();
+      updateFavCount();
+      applyFilters();
+      
+      // Keyboard listeners
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          flipCard();
+        } else if (e.code === 'ArrowRight') {
+          nextCard();
+        } else if (e.code === 'ArrowLeft') {
+          prevCard();
+        }
+      });
+    }
+
+    // Render reference table
+    function renderTable() {
+      tableBody.innerHTML = '';
+      dataset.forEach(item => {
+        let badgeColor = "";
+        if (item.cat === 'greetings') badgeColor = "bg-cyan-100 text-cyan-800";
+        else if (item.cat === 'pronouns') badgeColor = "bg-fuchsia-100 text-fuchsia-800";
+        else badgeColor = "bg-emerald-100 text-emerald-800";
+
+        const row = document.createElement('tr');
+        row.className = "hover:bg-slate-50 transition cursor-pointer";
+        row.onclick = () => {
+          const indexInCurrent = cards.findIndex(c => c.id === item.id);
+          if (indexInCurrent !== -1) {
+            currentIndex = indexInCurrent;
+            isFlipped = false;
+            updateCardUI();
+            window.scrollTo({ top: 100, behavior: 'smooth' });
+          } else {
+            // reset filters to find card
+            filterCards('all');
+            setTimeout(() => {
+              const newIndex = cards.findIndex(c => c.id === item.id);
+              if (newIndex !== -1) {
+                currentIndex = newIndex;
+                isFlipped = false;
+                updateCardUI();
+                window.scrollTo({ top: 100, behavior: 'smooth' });
+              }
+            }, 100);
+          }
+        };
+        row.innerHTML = `
+          <td class="px-4 py-3 font-bold text-slate-800">${item.front}</td>
+          <td class="px-4 py-3 text-slate-500">${item.back}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}">${item.catLabel}</span></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Filter Logic
+    function filterCards(cat) {
+      activeFilter = cat;
+      favoritesOnly = false;
+      updateFilterButtons();
+      applyFilters();
+    }
+
+    function toggleFavoritesFilter() {
+      favoritesOnly = !favoritesOnly;
+      activeFilter = 'all';
+      updateFilterButtons();
+      applyFilters();
+    }
+
+    function updateFilterButtons() {
+      // Reset classes
+      const btns = ['btn-all', 'btn-greetings', 'btn-pronouns', 'btn-to-be', 'btn-favs'];
+      btns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.className = "px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-1.5";
+        }
+      });
+
+      // Set active
+      if (favoritesOnly) {
+        document.getElementById('btn-favs').className = "px-4 py-2 rounded-xl text-sm font-semibold transition bg-amber-500 text-white shadow-sm shadow-amber-100 flex items-center gap-1.5";
+      } else {
+        const activeId = `btn-${activeFilter}`;
+        const activeBtn = document.getElementById(activeId);
+        if (activeBtn) {
+          activeBtn.className = "px-4 py-2 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm shadow-indigo-100";
+        }
+      }
+    }
+
+    function applyFilters() {
+      stopAutoplay();
+      isFlipped = false;
+      
+      if (favoritesOnly) {
+        cards = dataset.filter(c => favorites.includes(c.id));
+      } else if (activeFilter !== 'all') {
+        cards = dataset.filter(c => c.cat === activeFilter);
+      } else {
+        cards = [...dataset];
+      }
+
+      currentIndex = 0;
+      
+      if (cards.length === 0) {
+        emptyState.classList.remove('hidden');
+        flashcardContainer.classList.add('hidden');
+        cardCounter.innerText = "0 / 0";
+      } else {
+        emptyState.classList.add('hidden');
+        flashcardContainer.classList.remove('hidden');
+        updateCardUI();
+      }
+    }
+
+    // Card UI Update
+    function updateCardUI() {
+      if (cards.length === 0) return;
+      const card = cards[currentIndex];
+      const colors = catColors[card.cat];
+
+      // Hide active hint automatically on card change
+      hideHintDirect();
+
+      // Reset Flip rotation visually before setting text
+      if (isFlipped) {
+        flipSurface.classList.add('rotate-y-180');
+      } else {
+        flipSurface.classList.remove('rotate-y-180');
+      }
+
+      // Front Configuration
+      textFront.innerText = card.front;
+      cardBadgeFront.innerText = card.catLabel;
+      cardBadgeFront.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${colors.badge}`;
+      
+      cardFront.className = `absolute inset-0 backface-hidden rounded-3xl border-2 shadow-md flex flex-col justify-between p-6 transition-all duration-300 ${colors.bg} ${colors.border}`;
+
+      // Back Configuration
+      textBack.innerText = card.back;
+      cardBadgeBack.innerText = card.catLabel;
+      cardBadgeBack.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${colors.badge}`;
+      cardBack.className = `absolute inset-0 backface-hidden rotate-y-180 rounded-3xl border-2 shadow-md flex flex-col justify-between p-6 transition-all duration-300 ${colors.bg} ${colors.border}`;
+
+      // Hint Configuration
+      hintContent.innerText = card.hint;
+
+      // Update Favorites Stars
+      updateStarIcons(card.id);
+
+      // Counter
+      cardCounter.innerText = `${currentIndex + 1} / ${cards.length}`;
+    }
+
+    // Flip action
+    function flipCard() {
+      isFlipped = !isFlipped;
+      if (isFlipped) {
+        flipSurface.classList.add('rotate-y-180');
+      } else {
+        flipSurface.classList.remove('rotate-y-180');
+      }
+      hideHintDirect();
+    }
+
+    // Navigation
+    function nextCard() {
+      if (cards.length <= 1) return;
+      isFlipped = false;
+      currentIndex = (currentIndex + 1) % cards.length;
+      updateCardUI();
+      resetAutoplayTimer();
+    }
+
+    function prevCard() {
+      if (cards.length <= 1) return;
+      isFlipped = false;
+      currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+      updateCardUI();
+      resetAutoplayTimer();
+    }
+
+    // Shuffle action
+    function shuffleCards() {
+      stopAutoplay();
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+      currentIndex = 0;
+      isFlipped = false;
+      updateCardUI();
+    }
+
+    // Hint management
+    function toggleHint(event) {
+      event.stopPropagation(); // Avoid flipping the card when clicking the hint
+      const isHidden = hintOverlay.classList.contains('opacity-0');
+      if (isHidden) {
+        hintOverlay.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+        hintTextLabel.innerText = "Απόκρυψη Βοήθειας";
+      } else {
+        hideHintDirect();
+      }
+    }
+
+    function hideHintDirect() {
+      hintOverlay.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+      hintTextLabel.innerText = "Εμφάνιση Βοήθειας";
+    }
+
+    // Favorite Actions
+    function toggleFavorite(event) {
+      event.stopPropagation(); // Stop flip trigger
+      const currentCard = cards[currentIndex];
+      const index = favorites.indexOf(currentCard.id);
+
+      if (index === -1) {
+        favorites.push(currentCard.id);
+      } else {
+        favorites.splice(index, 1);
+      }
+
+      localStorage.setItem('lato_favs', JSON.stringify(favorites));
+      updateFavCount();
+      updateStarIcons(currentCard.id);
+
+      // If viewing favorites only and we unfavorited the current card
+      if (favoritesOnly) {
+        applyFilters();
+      }
+    }
+
+    function updateFavCount() {
+      favCountEl.innerText = favorites.length;
+    }
+
+    function updateStarIcons(cardId) {
+      const isFav = favorites.includes(cardId);
+      const favBtnFront = document.getElementById('fav-btn-front');
+      const favBtnBack = document.getElementById('fav-btn-back');
+
+      if (isFav) {
+        favBtnFront.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i>`;
+        favBtnBack.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i>`;
+      } else {
+        favBtnFront.innerHTML = `<i class="fa-regular fa-star text-slate-300 hover:text-amber-400"></i>`;
+        favBtnBack.innerHTML = `<i class="fa-regular fa-star text-slate-300 hover:text-amber-400"></i>`;
+      }
+    }
+
+    // Speech (TTS) integration
+    function speakText(event, side) {
+      event.stopPropagation(); // Prevents flipping
+      if (speech.speaking) {
+        speech.cancel();
+      }
+
+      const card = cards[currentIndex];
+      let utterance;
+
+      if (side === 'front') {
+        // Greek Speech
+        utterance = new SpeechSynthesisUtterance(card.front.replace("...", ""));
+        utterance.lang = 'el-GR';
+      } else {
+        // English Speech
+        utterance = new SpeechSynthesisUtterance(card.back.replace("...", ""));
+        utterance.lang = 'en-US';
+      }
+
+      speech.speak(utterance);
+    }
+
+    // Autoplay (Αυτόματη Περιστροφή) Logic
+    function toggleAutoplay() {
+      if (isPlaying) {
+        stopAutoplay();
+      } else {
+        startAutoplay();
+      }
+    }
+
+    function startAutoplay() {
+      if (cards.length === 0) return;
+      isPlaying = true;
+      document.getElementById('play-icon').className = "fa-solid fa-pause text-red-500";
+      document.getElementById('play-text').innerText = "Παύση";
+      document.getElementById('autoplay-progress-container').classList.remove('hidden');
+      
+      resetAutoplayTimer();
+    }
+
+    function stopAutoplay() {
+      isPlaying = false;
+      document.getElementById('play-icon').className = "fa-solid fa-play text-indigo-600";
+      document.getElementById('play-text').innerText = "Αυτόματη Περιστροφή";
+      document.getElementById('autoplay-progress-container').classList.add('hidden');
+      
+      clearInterval(autoplayInterval);
+      autoplayProgress = 0;
+      updateProgressBar();
+    }
+
+    function updateAutoplaySpeed() {
+      autoplaySpeed = parseInt(document.getElementById('autoplay-speed').value);
+      if (isPlaying) {
+        resetAutoplayTimer();
+      }
+    }
+
+    function resetAutoplayTimer() {
+      if (!isPlaying) return;
+      
+      clearInterval(autoplayInterval);
+      autoplayProgress = 0;
+      updateProgressBar();
+
+      const totalTicks = autoplaySpeed / progressUpdateInterval;
+      let tickCount = 0;
+
+      autoplayInterval = setInterval(() => {
+        tickCount++;
+        autoplayProgress = (tickCount / totalTicks) * 100;
+        updateProgressBar();
+
+        if (tickCount >= totalTicks) {
+          // Time is up! Check state:
+          if (!isFlipped) {
+            // 1. Flip to Back side
+            flipCard();
+            tickCount = 0; // reset ticks for back side display
+          } else {
+            // 2. Already flipped, go to next card and return to front
+            nextCard();
+            tickCount = 0;
+          }
+        }
+      }, progressUpdateInterval);
+    }
+
+    function updateProgressBar() {
+      document.getElementById('autoplay-progress').style.width = `${autoplayProgress}%`;
+    }
+
+    // Reset app states
+    function resetApp() {
+      if (confirm('Θέλετε να επαναφέρετε την εφαρμογή; Τα αγαπημένα σας θα διαγραφούν.')) {
+        localStorage.removeItem('lato_favs');
+        favorites = [];
+        updateFavCount();
+        filterCards('all');
+      }
+    }
+
+    // Run on startup
+    window.onload = init;
+  </script>
+</body>
+</html>
